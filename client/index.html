@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="./chat-style.css" rel="stylesheet" type="text/css" />
+
+    <title>Chatting using Socket.io</title>
+    <h1>Chatting Page</h1>
+  </head>
+  <body>
+    <div class="container">
+      <p>Your Nickname: <span id="nickname1"></span></p>
+      <p>Your ClientID: <span id="clientID"></span></p>
+      <div class="rooms">
+        <div class="room" id="room1">
+          <h2>Room 1</h2>
+          <div class="button-container">
+            <button onclick="joinRoom('room1')">Join</button>
+            <button onclick="exitRoom('room1')">Exit</button>
+          </div>
+          <div class="users" id="room1Users"></div>
+          <div class="chat-container" id="room1-chat-container">
+            <ul class="chat-list" id="room1-chat-list"></ul>
+          </div>
+          <div class="chat-input">
+            <input
+              type="text"
+              id="room1-messageInput"
+              placeholder="Type a message..."
+            />
+            <button onclick="sendRoomMessage('room1')">Send</button>
+          </div>
+        </div>
+        <div class="room" id="room2">
+          <h2>Room 2</h2>
+          <div class="button-container">
+            <button onclick="joinRoom('room2')">Join</button>
+            <button onclick="exitRoom('room2')">Exit</button>
+          </div>
+          <div class="users" id="room2Users"></div>
+          <div class="chat-container" id="room2-chat-container">
+            <ul class="chat-list" id="room2-chat-list"></ul>
+          </div>
+          <div class="chat-input">
+            <input
+              type="text"
+              id="room2-messageInput"
+              placeholder="Type a message..."
+            />
+            <button onclick="sendRoomMessage('room2')">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let socket = io();
+
+    const name = ['딸기우유', '예쁜이', '곰탱이', '맛탱이', '오징어'];
+    const random = Math.floor(Math.random() * 5);
+    const userName = name[random];
+
+    document.getElementById('nickname1').innerHTML = userName;
+
+    socket.emit('getClientId');
+    socket.on('sendClientId', ({ clientId }) => {
+      document.getElementById('clientID').innerHTML = clientId;
+    });
+
+    socket.emit('setUserNick', userName);
+
+    const roomUsers = {
+      room1: document.getElementById('room1Users'),
+      room2: document.getElementById('room2Users'),
+    };
+    const roomChatList = {
+      room1: document.getElementById('room1-chat-list'),
+      room2: document.getElementById('room2-chat-list'),
+    };
+    const roomChatContainer = {
+      room1: document.getElementById('room1-chat-container'),
+      room2: document.getElementById('room2-chat-container'),
+    };
+    const roomMessageInput = {
+      room1: document.getElementById('room1-messageInput'),
+      room2: document.getElementById('room2-messageInput'),
+    };
+
+    const inputMessageRoom1 = document.getElementById('room1-messageInput');
+    const inputMessageRoom2 = document.getElementById('room2-messageInput');
+
+    function joinRoom(room) {
+      socket.emit('join', room);
+    }
+
+    function exitRoom(room) {
+      if (!room) return;
+
+      roomUsers[room].innerHTML = '';
+      roomChatList[room].innerHTML = '';
+      socket.emit('exit', room);
+    }
+
+    function sendRoomMessage(room) {
+      const message = roomMessageInput[room].value;
+
+      if (message.trim() !== '') {
+        socket.emit('chatMessage', { message, room });
+        roomMessageInput[room].value = '';
+      }
+    }
+
+    socket.on('userList', ({ room, userList }) => {
+      if (!room) return;
+
+      const usersElement = roomUsers[room];
+      usersElement.innerHTML = '';
+
+      console.log({ room, userList });
+      userList.forEach((userId) => {
+        const p = document.createElement('p');
+        p.textContent = userId;
+        usersElement.appendChild(p);
+      });
+    });
+
+    socket.on('userJoined', ({ userId, room }) => {
+      const message = `[${userId} joined the room.]`;
+      appendMessage(room, message);
+    });
+
+    socket.on('chatMessage', ({ userId, message, room }) => {
+      appendMessage(room, `${userId} : ${message}`);
+    });
+
+    function appendMessage(room, message) {
+      const chatList = roomChatList[room];
+      const li = document.createElement('li');
+      li.className = 'chat-item';
+
+      const p = document.createElement('p');
+      p.textContent = message;
+      li.appendChild(p);
+      chatList.appendChild(li);
+
+      // 스크롤 아래로 이동
+      roomChatContainer[room].scrollTop = roomChatContainer[room].scrollHeight;
+    }
+
+    inputMessageRoom1.addEventListener('keyup', function (event) {
+      if (event.key === 'Enter') {
+        sendRoomMessage('room1');
+      }
+    });
+
+    inputMessageRoom2.addEventListener('keyup', function (event) {
+      if (event.key === 'Enter') {
+        sendRoomMessage('room2');
+      }
+    });
+  </script>
+</html>

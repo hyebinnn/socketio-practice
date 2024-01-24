@@ -73,5 +73,3 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](LICENSE).
-
-> > > > > > > ec93da4 ([Feat] Socket.io 이용하여 채팅 기능 구현)

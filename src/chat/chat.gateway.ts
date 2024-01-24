@@ -25,10 +25,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
     this.connectedClients[client.id] = true;
+    console.log(`${client.id} is connected...`)
   }
 
   handleDisconnect(client: Socket): void {
     delete this.connectedClients[client.id];
+    console.log(`${client.id} is disconnected...`)
 
     // client 연결이 종료되면 해당 클라이언트가 속한 모든 방에서 해당 유저를 제거
 

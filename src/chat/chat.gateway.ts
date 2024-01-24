@@ -45,9 +45,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server
           .to(room)
           .emit('userLeft', { userId: this.clientNickname[client.id], room });
-        // this.server
-        //   .to(room)
-        //   .emit('userList', { room, userList: this.roomUsers[room] });
       }
     });
 

@@ -8,6 +8,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { pubClient, subClient } from './redis.adapter';
 
 @WebSocketGateway()
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -20,17 +21,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   roomUsers: { [key: string]: string[] } = {};
 
   handleConnection(client: Socket): void {
+    if (pubClient.connect) {
+      console.log('--- Redis is connected sucessfully! ---');
+    }
+
     if (this.connectedClients[client.id]) {
       client.disconnect(true);
       return;
     }
     this.connectedClients[client.id] = true;
-    console.log(`${client.id} is connected...`)
+    console.log(`${client.id} is connected...`);
   }
 
   handleDisconnect(client: Socket): void {
     delete this.connectedClients[client.id];
-    console.log(`${client.id} is disconnected...`)
+    console.log(`${client.id} is disconnected...`);
 
     // client 연결이 종료되면 해당 클라이언트가 속한 모든 방에서 해당 유저를 제거
 
@@ -82,6 +87,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(this.clientNickname[client.id]);
     client.join(room);
 
+    // redis에 {key: room 번호, value: client id} 데이터 저장
+    const key = room;
+    pubClient.SADD(key, client.id);
+
     // room의 첫 유저라면, roomUsers[room] 배열 초기화
     if (!this.roomUsers[room]) {
       this.roomUsers[room] = [];
@@ -105,8 +114,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!client.rooms.has(room)) {
       return;
     }
-
     client.leave(room);
+
+    // redis 내 데이터 제거 (key, value)
+    pubClient.SREM(room, client.id);
 
     const index = this.roomUsers[room]?.indexOf(this.clientNickname[client.id]);
     if (index !== -1) {

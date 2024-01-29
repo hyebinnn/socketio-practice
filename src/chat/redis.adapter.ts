@@ -3,6 +3,9 @@ import { createClient } from 'redis';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { ServerOptions } from 'socket.io';
 
+export const pubClient = createClient({ url: `redis://localhost:6379` });
+export const subClient = pubClient.duplicate();
+
 export class RedisIoAdapter extends IoAdapter {
   private redisAdapter;
 
@@ -11,8 +14,8 @@ export class RedisIoAdapter extends IoAdapter {
   }
 
   async connectToRedis(): Promise<void> {
-    const pubClient = createClient({ url: `redis://localhost:6379` });
-    const subClient = pubClient.duplicate();
+    // const pubClient = createClient({ url: `redis://localhost:6379` });
+    // const subClient = this.pubClient.duplicate();
 
     console.log('Start connect to redis...');
 
